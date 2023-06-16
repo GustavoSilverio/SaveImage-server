@@ -21,9 +21,9 @@ namespace teste.Controllers
             var uploadParams = new ImageUploadParams()
             {
                 File = new FileDescription(@"data:image/png;base64,iVBORw0KGgoAAA
-ANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4
-//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU
-5ErkJggg=="),
+                                            ANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4
+                                            //8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU
+                                            5ErkJggg=="),
                 UseFilename = true,
                 UniqueFilename = false,
                 Overwrite = true
@@ -32,11 +32,28 @@ ANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4
             return Ok(uploadResult);
         }
 
-        [HttpGet("pegardetalheainessabosta")]
-        public ActionResult PostImage()
+        [HttpPost("pegardetalheainessabosta")]
+        public async Task<ActionResult> PostImage( IFormFile image)
         {
-            var getResourceResult = _cloudinary.Api.UrlImgUp.BuildUrl("993090172-breno-no-sao-paulo");
-            return Ok(getResourceResult);
+              byte[] imageData;
+                using (var stream = new MemoryStream())
+                  {
+                        await image.CopyToAsync(stream);
+                          imageData = stream.ToArray();
+                        }
+
+            var base64Image = Convert.ToBase64String(imageData);
+            var dataUri = $"data:{image.ContentType};base64,{base64Image}";
+
+              var uploadParams = new ImageUploadParams()
+                {
+                      File = new FileDescription(dataUri),
+                        PublicId = image.FileName
+                      };
+
+                        var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+
+               return Ok(new { Url = uploadResult.SecureUrl.ToString() });
         }
     }
 }
